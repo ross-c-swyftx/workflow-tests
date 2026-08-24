@@ -2,9 +2,11 @@
 # Does a job awaiting environment approval hold its concurrency group?
 #
 # Claim under test: the group is held for the whole approval wait, so an apply gated on a required
-# reviewer blocks everything else in that group for as long as the review takes. Needs the `gated`
-# environment to have a required reviewer; without one the gated job runs immediately and the
-# experiment proves nothing.
+# reviewer blocks everything else in that group for as long as the review takes. `exp1` already
+# showed that a *running* job blocks a follower; the question here is whether a job merely parked
+# on an approval, consuming no runner, does the same.
+#
+# The follower's start time against the approval time is the measurement.
 set -Eeuo pipefail
 cd "$(dirname "$0")"
 # shellcheck source=lib.sh
@@ -17,7 +19,7 @@ if [ "${reviewers}" = "0" ]; then
   exit 1
 fi
 
-echo "expect: gated sits in waiting, follower stays queued behind it and never starts"
+echo "expect: gated parks in 'waiting', follower stays queued and starts only after approval"
 
 dispatch exp2-gated.yaml g1
 gated=$(run_id exp2-gated.yaml g1)
@@ -25,9 +27,20 @@ wait_state "${gated}" waiting >/dev/null
 
 dispatch exp2-follower.yaml f1
 follower=$(run_id exp2-follower.yaml f1)
-sleep 30
-
-report "gated:${gated}" "follower:${follower}"
+sleep 40
 echo
-echo "approve or reject ${gated} in the browser, then re-read the follower:"
-echo "  gh run view ${follower} --repo ${REPO}"
+echo "with the gate still unapproved:"
+report "gated:${gated}" "follower:${follower}"
+
+approved_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+env_id=$(gh api "repos/${REPO}/actions/runs/${gated}/pending_deployments" --jq '.[0].environment.id')
+gh api -X POST "repos/${REPO}/actions/runs/${gated}/pending_deployments" \
+  -f "environment_ids[]=${env_id}" -f state=approved -f comment=exp2 >/dev/null
+echo
+echo "approved at ${approved_at}"
+
+wait_done "${gated}" "${follower}"
+echo
+gh run view "${follower}" --repo "${REPO}" --json startedAt,updatedAt,conclusion \
+  --jq '"follower started \(.startedAt), ended \(.updatedAt), \(.conclusion)"'
+echo "if that start time is after the approval, the waiting job was holding the group."
