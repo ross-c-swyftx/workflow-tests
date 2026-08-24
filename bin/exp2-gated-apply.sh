@@ -34,8 +34,10 @@ report "gated:${gated}" "follower:${follower}"
 
 approved_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 env_id=$(gh api "repos/${REPO}/actions/runs/${gated}/pending_deployments" --jq '.[0].environment.id')
-gh api -X POST "repos/${REPO}/actions/runs/${gated}/pending_deployments" \
-  -f "environment_ids[]=${env_id}" -f state=approved -f comment=exp2 >/dev/null
+# environment_ids is an array of integers, and `-f` would send it as a string.
+gh api -X POST "repos/${REPO}/actions/runs/${gated}/pending_deployments" --input - >/dev/null <<JSON
+{"environment_ids": [${env_id}], "state": "approved", "comment": "exp2"}
+JSON
 echo
 echo "approved at ${approved_at}"
 
