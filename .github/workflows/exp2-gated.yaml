@@ -1,0 +1,20 @@
+name: exp2 gated
+run-name: exp2-gated ${{ inputs.tag }}
+
+# The environment gate sits on the same job as the concurrency group, which is how
+# shared-terragrunt-deploy-only.yaml is built. The question is whether the group is held while the
+# job waits for a reviewer.
+on:
+  workflow_dispatch:
+    inputs:
+      tag: { required: true, type: string }
+
+jobs:
+  gated:
+    runs-on: ubuntu-latest
+    environment: gated
+    concurrency:
+      group: exp2
+      cancel-in-progress: false
+    steps:
+      - run: echo "approved ${{ inputs.tag }}"

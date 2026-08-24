@@ -1,0 +1,18 @@
+name: exp1 queued
+run-name: exp1-queued ${{ inputs.tag }}
+
+# Same group as exp1-holder, so this cannot start until the holder finishes. The question is
+# whether it survives the wait when a second one is dispatched behind it.
+on:
+  workflow_dispatch:
+    inputs:
+      tag: { required: true, type: string }
+
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: exp1
+      cancel-in-progress: false
+    steps:
+      - run: echo "ran ${{ inputs.tag }}"

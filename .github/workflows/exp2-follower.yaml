@@ -1,0 +1,16 @@
+name: exp2 follower
+run-name: exp2-follower ${{ inputs.tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag: { required: true, type: string }
+
+jobs:
+  follow:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: exp2
+      cancel-in-progress: false
+    steps:
+      - run: echo "ran ${{ inputs.tag }}"

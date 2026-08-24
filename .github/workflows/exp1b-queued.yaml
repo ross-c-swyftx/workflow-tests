@@ -1,0 +1,18 @@
+name: exp1b queued
+run-name: exp1b-queued ${{ inputs.tag }}
+
+# Identical to exp1-queued except for `queue: max`, which is documented to raise the pending
+# limit from one to a hundred.
+on:
+  workflow_dispatch:
+    inputs:
+      tag: { required: true, type: string }
+
+jobs:
+  wait:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: exp1b
+      queue: max
+    steps:
+      - run: echo "ran ${{ inputs.tag }}"

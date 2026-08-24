@@ -1,0 +1,17 @@
+name: exp1b holder
+run-name: exp1b-holder ${{ inputs.tag }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag: { required: true, type: string }
+      seconds: { required: false, type: string, default: '150' }
+
+jobs:
+  hold:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: exp1b
+      queue: max
+    steps:
+      - run: sleep "${{ inputs.seconds }}"

@@ -1,0 +1,22 @@
+name: exp3 plan
+run-name: exp3-plan ${{ github.event_name }} ${{ github.ref_name }} ${{ github.sha }}
+
+# The group and cancel expressions are verbatim from shared-terragrunt-plan.yaml, with a fixed
+# stand-in for the unit path.
+on:
+  pull_request:
+    paths: ['units/**']
+  push:
+    branches: [main]
+    paths: ['units/**']
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: tg-${{ github.event_name == 'pull_request' && github.ref || 'main' }}-units/unit-a
+      cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+    steps:
+      - run: |
+          echo "event=${{ github.event_name }} ref=${{ github.ref }}"
+          sleep 90

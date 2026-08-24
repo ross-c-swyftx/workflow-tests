@@ -1,0 +1,17 @@
+name: exp3 apply
+run-name: exp3-apply ${{ github.ref_name }} ${{ github.sha }}
+
+on:
+  push:
+    branches: [main]
+    paths: ['units/**']
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: tg-main-units/unit-a
+      cancel-in-progress: false
+    steps:
+      - run: sleep 120
