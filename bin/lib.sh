@@ -54,3 +54,15 @@ report() { # report <label:run-id ...>
     printf '%-14s %-12s %s\n' "${pair%%:*}" "${pair#*:}" "$(state "${pair#*:}")"
   done
 }
+
+job_times() { # job_times <workflow-file> <limit> - one line per job, in start order
+  local wf=$1 limit=$2 id title
+  gh run list --repo "${REPO}" --workflow "${wf}" --limit "${limit}" \
+    --json databaseId,displayTitle --jq '.[] | "\(.databaseId)\t\(.displayTitle)"' |
+  while IFS=$'\t' read -r id title; do
+    # The run's own startedAt is when the run was created, so it shows nothing about a job that
+    # sat in a concurrency queue. Only the job's start does.
+    gh api "repos/${REPO}/actions/runs/${id}/jobs" \
+      --jq ".jobs[] | \"\(.started_at) -> \(.completed_at // \"running\")  \(.conclusion // \"-\")  ${title}\""
+  done | sort
+}

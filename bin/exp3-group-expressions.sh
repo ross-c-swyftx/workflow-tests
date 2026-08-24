@@ -48,12 +48,7 @@ echo "pushed to main - its plan and apply share tg-main-units/unit-a"
 echo "waiting for everything to settle"
 sleep 240
 echo
-gh run list --repo "${REPO}" --workflow exp3-plan.yaml --limit 8 \
-  --json displayTitle,conclusion,startedAt,updatedAt \
-  --jq '.[] | "\(.conclusion // "-")  \(.startedAt) -> \(.updatedAt)  \(.displayTitle)"'
-gh run list --repo "${REPO}" --workflow exp3-apply.yaml --limit 4 \
-  --json displayTitle,conclusion,startedAt,updatedAt \
-  --jq '.[] | "\(.conclusion // "-")  \(.startedAt) -> \(.updatedAt)  \(.displayTitle)"'
+{ job_times exp3-plan.yaml 8; job_times exp3-apply.yaml 4; } | sort
 echo
 echo "read it as: PR A's first plan cancelled, PR A's second and PR B's overlapping in time,"
 echo "and main's plan starting only after main's apply finished."
