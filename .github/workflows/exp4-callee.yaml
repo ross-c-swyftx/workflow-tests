@@ -1,0 +1,12 @@
+name: exp4 callee has its own name
+
+on:
+  workflow_call:
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "callee job sees github.workflow = '${{ github.workflow }}'"
+          echo "job.workflow_file_path = '${{ job.workflow_file_path }}'"

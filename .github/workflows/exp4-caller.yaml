@@ -1,0 +1,16 @@
+name: exp4 caller
+run-name: exp4-caller ${{ inputs.tag }}
+
+# What does a reusable workflow see in github.workflow - this caller's name, or its own?
+on:
+  workflow_dispatch:
+    inputs:
+      tag: { required: true, type: string }
+
+jobs:
+  direct:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "caller job sees github.workflow = '${{ github.workflow }}'"
+  called:
+    uses: ./.github/workflows/exp4-callee.yaml
