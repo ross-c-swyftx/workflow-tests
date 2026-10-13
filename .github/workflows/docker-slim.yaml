@@ -1,0 +1,21 @@
+name: 'Docker on slim'
+on:
+  pull_request:
+    branches: [main]
+jobs:
+  gatekeeper:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-slim, ubuntu-latest]
+    runs-on: ${{ matrix.runner }}
+    permissions:
+      checks: read
+      statuses: read
+    steps:
+      - run: command -v docker || echo "no docker binary"
+      - uses: upsidr/merge-gatekeeper@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          timeout: 120
+          ignored: "gatekeeper (ubuntu-slim),gatekeeper (ubuntu-latest)"
