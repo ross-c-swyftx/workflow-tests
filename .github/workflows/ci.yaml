@@ -1,0 +1,56 @@
+name: 'CI: Sandbox'
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-sandbox-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  changes:
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      swyftx: ${{ steps.filter.outputs.swyftx }}
+      platform: ${{ steps.platform.outputs.include }}
+    steps:
+      - uses: actions/checkout@v5
+        if: github.event_name == 'push'
+      - id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          filters: |
+            swyftx: ['swyftx/**']
+            ./modules/a: ['modules/a/**']
+            ./modules/b: ['modules/b/**']
+      - id: platform
+        env:
+          CHANGES: ${{ steps.filter.outputs.changes }}
+        run: |
+          echo "include=$(jq -c '[.[] | select(startswith("./")) | {path: .}]' <<<"$CHANGES")" >> "$GITHUB_OUTPUT"
+          echo "event=${{ github.event_name }} attempt=${{ github.run_attempt }} changes=$CHANGES"
+
+  unit_test:
+    needs: changes
+    uses: ./.github/workflows/shared-test.yaml
+    with:
+      run: ${{ needs.changes.outputs.swyftx == 'true' }}
+
+  integration_test:
+    needs: changes
+    uses: ./.github/workflows/shared-test.yaml
+    with:
+      run: ${{ needs.changes.outputs.swyftx == 'true' }}
+
+  platform_test:
+    needs: changes
+    if: needs.changes.outputs.platform != '[]'
+    uses: ./.github/workflows/shared-platform.yaml
+    with:
+      matrix: ${{ needs.changes.outputs.platform }}

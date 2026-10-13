@@ -1,0 +1,19 @@
+name: '_: shared test'
+
+on:
+  workflow_call:
+    inputs:
+      run:
+        type: boolean
+        required: true
+
+jobs:
+  run:
+    strategy:
+      matrix:
+        node-version: [22.x]
+    runs-on: ${{ inputs.run && 'ubuntu-latest' || 'ubuntu-slim' }}
+    steps:
+      - run: echo "run=${{ inputs.run }} runner=$RUNNER_NAME nproc=$(nproc) attempt=${{ github.run_attempt }}"
+      - if: inputs.run
+        run: echo "would run the suite"

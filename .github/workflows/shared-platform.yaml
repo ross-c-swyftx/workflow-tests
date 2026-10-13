@@ -1,0 +1,17 @@
+name: '_: shared platform'
+
+on:
+  workflow_call:
+    inputs:
+      matrix:
+        type: string
+        required: true
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include: ${{ fromJson(inputs.matrix) }}
+    steps:
+      - run: echo "testing ${{ matrix.path }}"
