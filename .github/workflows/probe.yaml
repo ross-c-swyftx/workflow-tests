@@ -9,28 +9,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/claims
-        with: {marker: main, expect: "token issued at once; sub context pull_request"}
+        with: {marker: edited-in-PR, expect: "token issued at once; sub context pull_request"}
   open-env:
     runs-on: ubuntu-latest
     environment: open
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/claims
-        with: {marker: main, expect: "token issued at once; sub context environment:open"}
+        with: {marker: edited-in-PR, expect: "token issued at once; sub context environment:open"}
   gated-env:
     runs-on: ubuntu-latest
     environment: gated
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/claims
-        with: {marker: main, expect: "job waits for a reviewer; the PR author cannot approve"}
+        with: {marker: edited-in-PR, expect: "job waits for a reviewer; the PR author cannot approve"}
   gated-env-removed-in-pr:
     runs-on: ubuntu-latest
-    environment: gated
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/claims
-        with: {marker: main, expect: "the PR deletes this job's environment line"}
+        with: {marker: edited-in-PR, expect: "no gate now: token issued at once, sub context pull_request, so a trust pinned to environment:gated would refuse it"}
   reusable-open:
     uses: ross-c-swyftx/workflow-tests/.github/workflows/probe-reusable.yaml@main
     with: {env: open}

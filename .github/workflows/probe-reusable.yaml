@@ -14,5 +14,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/claims
         with:
-          marker: reusable-from-main
+          marker: reusable-EDITED-in-PR
           expect: "reusable called @main: MARKER reusable-from-main even when the PR edits this file; sub context environment:${{ inputs.env }}; job_workflow_ref probe-reusable.yaml@refs/heads/main"
