@@ -74,4 +74,6 @@ jobs:
           tags: poison-pr:main
           cache-from: type=gha,scope=swyftx-f1b-pr
       - name: note
-        run: echo "Read each build step log: 'CACHED' on the RUN layer => main pulled the branch/PR gha cache (CONFIRMED). RUN re-executes 25s (not CACHED) => BLOCKED."
+        run: |
+          echo "Read each build step log. CACHED on the RUN layer => main pulled the branch/PR gha cache (CONFIRMED)."
+          echo "RUN re-executes 25s (not CACHED) => BLOCKED."
