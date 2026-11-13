@@ -1,0 +1,59 @@
+name: cache-write-branch
+on:
+  push:
+    branches: [poison-writer]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: write
+jobs:
+  write-actions-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - name: pick key by event
+        id: k
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "key=poison-f1a-pr" >> "$GITHUB_OUTPUT"; echo "dir=cached-dir-pr" >> "$GITHUB_OUTPUT"
+          else
+            echo "key=poison-f1a-branch" >> "$GITHUB_OUTPUT"; echo "dir=cached-dir-branch" >> "$GITHUB_OUTPUT"
+          fi
+      - name: create sentinel
+        run: |
+          mkdir -p "${{ steps.k.outputs.dir }}"
+          echo "SENTINEL-FROM-WRITER event=${{ github.event_name }} ref=${{ github.ref }} sha=${{ github.sha }} run=${{ github.run_id }} ts=$(date -u +%FT%TZ)" > "${{ steps.k.outputs.dir }}/sentinel.txt"
+          cat "${{ steps.k.outputs.dir }}/sentinel.txt"
+      - name: save actions/cache (post-step saves on primary-key miss)
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.k.outputs.dir }}
+          key: ${{ steps.k.outputs.key }}
+  write-buildkit-cache:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: docker/setup-buildx-action@v3
+      - name: pick scope + dockerfile by event
+        id: k
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "scope=swyftx-f1b-pr" >> "$GITHUB_OUTPUT"
+            echo 'marker=SENTINEL-BUILDKIT-PR' >> "$GITHUB_OUTPUT"
+          else
+            echo "scope=swyftx-f1b-branch" >> "$GITHUB_OUTPUT"
+            echo 'marker=SENTINEL-BUILDKIT-BRANCH' >> "$GITHUB_OUTPUT"
+          fi
+      - name: write Dockerfile
+        run: |
+          printf 'FROM alpine:3.20\nRUN echo "%s" > /sentinel.txt && sleep 25 && cat /sentinel.txt\n' "${{ steps.k.outputs.marker }}" > Dockerfile.poison
+          cat Dockerfile.poison
+      - name: build and export gha cache
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.poison
+          push: false
+          load: true
+          tags: poison:writer
+          cache-to: type=gha,mode=max,scope=${{ steps.k.outputs.scope }}
+          cache-from: type=gha,scope=${{ steps.k.outputs.scope }}
